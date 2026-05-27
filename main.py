@@ -1,11 +1,42 @@
-"""
-Main entry point — clean handler registration with explicit group priorities.
-"""
-
 import sys
 import os
+import types
+import importlib
 
 sys.path.insert(0, os.path.dirname(__file__))
+
+
+def _alias_packages():
+    packages = {
+        "utils": ["decorators", "helpers"],
+        "handlers": [
+            "menus",
+            "admin",
+            "warns",
+            "locks",
+            "filters_handler",
+            "antispam",
+            "welcome",
+            "lists",
+            "persian_commands",
+            "report",
+            "help_center",
+        ],
+        "keyboards": ["inline"],
+    }
+
+    for pkg, modules in packages.items():
+        package = types.ModuleType(pkg)
+        package.__path__ = []
+        sys.modules[pkg] = package
+
+        for mod in modules:
+            module = importlib.import_module(mod)
+            sys.modules[f"{pkg}.{mod}"] = module
+            setattr(package, mod, module)
+
+
+_alias_packages()
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder
@@ -30,13 +61,8 @@ async def global_error_handler(update: object, context) -> None:
     logger.error(f"Unhandled exception: {context.error}", exc_info=context.error)
 
 
-def main() -> None:
-    if not TELEGRAM_BOT_TOKEN:
-        logger.critical("TELEGRAM_BOT_TOKEN تنظیم نشده است!")
-        sys.exit(1)
-
+def main():
     init_db()
-    logger.info("دیتابیس آماده شد.")
 
     app = (
         ApplicationBuilder()
@@ -47,29 +73,20 @@ def main() -> None:
 
     app.add_error_handler(global_error_handler)
 
-    for h in menus.get_handlers():
-        app.add_handler(h, group=0)
+    modules = [
+        menus,
+        admin,
+        warns,
+        filters_handler,
+        lists,
+        welcome,
+        report,
+        help_center,
+    ]
 
-    for h in admin.get_handlers():
-        app.add_handler(h, group=0)
-
-    for h in warns.get_handlers():
-        app.add_handler(h, group=0)
-
-    for h in filters_handler.get_handlers():
-        app.add_handler(h, group=0)
-
-    for h in lists.get_handlers():
-        app.add_handler(h, group=0)
-
-    for h in welcome.get_handlers():
-        app.add_handler(h, group=0)
-
-    for h in report.get_handlers():
-        app.add_handler(h, group=0)
-
-    for h in help_center.get_handlers():
-        app.add_handler(h, group=0)
+    for module in modules:
+        for h in module.get_handlers():
+            app.add_handler(h, group=0)
 
     for h in locks.get_command_handlers():
         app.add_handler(h, group=0)
@@ -82,9 +99,7 @@ def main() -> None:
     for h in antispam.get_handlers():
         app.add_handler(h, group=3)
 
-    logger.info("✅ ربات گارد پیشرفته آماده است.")
-    print("✅ ربات گارد پیشرفته در حال اجرا...")
-
+    print("Bot Started")
     app.run_polling(
         allowed_updates=Update.ALL_TYPES,
         drop_pending_updates=True,
