@@ -3,7 +3,7 @@ import logging
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 
-DB_PATH = "tgbot/bot.db"
+DB_PATH = "bot.db"
 
 MAX_WARNS_DEFAULT = 3
 
