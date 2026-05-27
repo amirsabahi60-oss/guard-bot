@@ -1,33 +1,29 @@
 """
 Main entry point — clean handler registration with explicit group priorities.
-
-Group 0 (default): Slash commands + CallbackQueryHandlers
-Group 1:           Persian text triggers (priority over content checks)
-Group 2:           Lock content check (runs on every non-command message)
-Group 3:           Anti-spam / flood check
 """
+
 import sys
 import os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
 from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, filters
+from telegram.ext import ApplicationBuilder
 
 from config import TELEGRAM_BOT_TOKEN, logger
 from database import init_db
 
-import handlers.menus           as menus
-import handlers.admin           as admin
-import handlers.warns           as warns
-import handlers.locks           as locks
-import handlers.filters_handler as filters_handler
-import handlers.antispam        as antispam
-import handlers.welcome         as welcome
-import handlers.lists           as lists
-import handlers.persian_commands as persian_commands
-import handlers.report          as report
-import handlers.help_center     as help_center
+import menus
+import admin
+import warns
+import locks
+import filters_handler
+import antispam
+import welcome
+import lists
+import persian_commands
+import report
+import help_center
 
 
 async def global_error_handler(update: object, context) -> None:
@@ -45,13 +41,12 @@ def main() -> None:
     app = (
         ApplicationBuilder()
         .token(TELEGRAM_BOT_TOKEN)
-        .concurrent_updates(True)
+        .concurrent_updates(False)
         .build()
     )
 
     app.add_error_handler(global_error_handler)
 
-    # ── Group 0: Commands & callbacks ────────────────────────────────────
     for h in menus.get_handlers():
         app.add_handler(h, group=0)
 
@@ -79,14 +74,11 @@ def main() -> None:
     for h in locks.get_command_handlers():
         app.add_handler(h, group=0)
 
-    # ── Group 1: Persian text triggers (priority) ─────────────────────────
     for h in persian_commands.get_handlers():
         app.add_handler(h, group=1)
 
-    # ── Group 2: Lock content check ───────────────────────────────────────
     app.add_handler(locks.get_message_handler(), group=2)
 
-    # ── Group 3: Anti-spam / flood ────────────────────────────────────────
     for h in antispam.get_handlers():
         app.add_handler(h, group=3)
 
