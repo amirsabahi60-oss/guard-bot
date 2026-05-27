@@ -1,0 +1,9 @@
+Improve automatic message deletion for user commands and bot responses
+
+Implement a new message scheduling system for automatic deletion based on user settings, affecting Persian commands, reports, and warnings.
+
+Replit-Commit-Author: Agent
+Replit-Commit-Session-Id: 20a86e5e-86d4-4448-9e9f-fecc1eb56615
+Replit-Commit-Checkpoint-Type: full_checkpoint
+Replit-Commit-Event-Id: 41f8c92f-13c6-46da-b4f1-0cb2ee1225d8
+Replit-Helium-Checkpoint-Created: true
