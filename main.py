@@ -6,37 +6,32 @@ import importlib
 sys.path.insert(0, os.path.dirname(__file__))
 
 
-def _alias_packages():
-    packages = {
-        "utils": ["decorators", "helpers"],
-        "handlers": [
-            "menus",
-            "admin",
-            "warns",
-            "locks",
-            "filters_handler",
-            "antispam",
-            "welcome",
-            "lists",
-            "persian_commands",
-            "report",
-            "help_center",
-        ],
-        "keyboards": ["inline"],
-    }
+def make_package(name, modules):
+    package = types.ModuleType(name)
+    package.__path__ = []
+    sys.modules[name] = package
 
-    for pkg, modules in packages.items():
-        package = types.ModuleType(pkg)
-        package.__path__ = []
-        sys.modules[pkg] = package
-
-        for mod in modules:
-            module = importlib.import_module(mod)
-            sys.modules[f"{pkg}.{mod}"] = module
-            setattr(package, mod, module)
+    for mod in modules:
+        module = importlib.import_module(mod)
+        sys.modules[f"{name}.{mod}"] = module
+        setattr(package, mod, module)
 
 
-_alias_packages()
+make_package("utils", ["decorators", "helpers"])
+make_package("keyboards", ["inline"])
+make_package("handlers", [
+    "menus",
+    "admin",
+    "warns",
+    "locks",
+    "filters_handler",
+    "antispam",
+    "welcome",
+    "lists",
+    "persian_commands",
+    "report",
+    "help_center",
+])
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder
@@ -64,27 +59,10 @@ async def global_error_handler(update: object, context) -> None:
 def main():
     init_db()
 
-    app = (
-        ApplicationBuilder()
-        .token(TELEGRAM_BOT_TOKEN)
-        .concurrent_updates(False)
-        .build()
-    )
-
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(False).build()
     app.add_error_handler(global_error_handler)
 
-    modules = [
-        menus,
-        admin,
-        warns,
-        filters_handler,
-        lists,
-        welcome,
-        report,
-        help_center,
-    ]
-
-    for module in modules:
+    for module in [menus, admin, warns, filters_handler, lists, welcome, report, help_center]:
         for h in module.get_handlers():
             app.add_handler(h, group=0)
 
@@ -100,10 +78,7 @@ def main():
         app.add_handler(h, group=3)
 
     print("Bot Started")
-    app.run_polling(
-        allowed_updates=Update.ALL_TYPES,
-        drop_pending_updates=True,
-    )
+    app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 
 if __name__ == "__main__":
